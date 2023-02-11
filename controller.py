@@ -14,33 +14,68 @@ def init():
                 data = note.create(user_note)
                 db.save(data)
             case 'showall':
+                show_notes(db.read())
+            case 'find':
+                key_word = get_key_word_find_note().lower()
+                found_notes = db.find(key_word)
+                if len(found_notes) == 0:
+                    view.show('Заметка не найдена')
+                else:
+                    show_notes(found_notes)
+            case 'delete':
                 notes = db.read()
-                for row in notes:
-                    view.show(note.format(row))
-                
+                show_notes(notes)
+                view.show('Чтобы удалить заметку')
+                id_note = get_id_note()
+                notes = change(notes, id_note, 'del')
+                if len(notes) > 0:
+                    db.overwrite(notes)
+                else:
+                    view.show(f'Заметка с id: {id_note} не найдена')
+            case 'change':
+                notes = db.read()
+                show_notes(notes)
+                view.show('Чтобы изменить заметку')
+                id_note = get_id_note()
+                notes = change(notes, id_note)
+                if len(notes) > 0:
+                    db.overwrite(notes)
+                else:
+                    view.show(f'Заметка с id: {id_note} не найдена')
 
-# в заметке будем хранить автора, дату создания, дату изменения
-# было бы хорошо что смотреть свои заметки может только автор, и у каждого автора есть пароль
-# сделать валидацию пароля чтобы было не мнее 5 знаков и не менее 1ой буквы
-# остальные не видят и не знают о заметке другого
+def change(src_notes, id_note, mode='change'):
+    for row in src_notes:
+        if id_note == row['id']:
+            if mode == 'del':
+                src_notes.remove(row)
+                return src_notes
+            view.show(row['note'])
+            row['note'] = get_note()
+            return src_notes
 
-# данные о пользователях и пароле записывать в одну базу
-# для каждого пользователя создавать отдельную базу
+def show_notes(notes):
+    for row in notes:
+        view.show(note.formatted_output(row))
 
-# если пользователь не зарегистрирован, то сообщиь об этом и показать
-# сообщение о регистрации после ввода данных
-
-# немогут быть 2 пользователя с одним именем в базе, регистр не должен быть важен при проверке имени
-
-# можно попробовать хранить все в csv файлах
 def get_command():
     return view.get_data('Введите команду (new, change, find, showall, delete, exit) >> ')
+
 
 def get_username():
     return view.get_data('Введите имя пользователя >> ')
 
+
 def get_user_password():
     return view.get_data('Введите пароль >> ')
 
+
 def get_note():
     return view.get_data('Введите текст заметки:\n')
+
+
+def get_key_word_find_note():
+    return view.get_data('Введите слово или дату для поиска заметки >> ')
+
+
+def get_id_note():
+    return view.get_data('Введите id >> ')
